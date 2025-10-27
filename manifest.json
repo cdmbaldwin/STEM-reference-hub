@@ -1,7 +1,7 @@
 {
 "name": "Engineering Reference Hub",
 "short_name": "EnggHub",
-"start_url": "index.html",
+"start_url": ".",
 "display": "standalone",
 "background_color": "#f3f4f6",
 "theme_color": "#0369a1",

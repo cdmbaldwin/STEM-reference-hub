@@ -1,10 +1,11 @@
 // A simple service worker for basic offline functionality
 
 const CACHE_NAME = 'engg-hub-cache-v1';
+// FIXED PATHS: Use relative paths for GitHub Pages
 const URLS_TO_CACHE = [
-    '/',
-    'index.html',
-    'manifest.json'
+    '.',
+    './index.html',
+    './manifest.json'
 ];
 
 // Install event: Cache the core app shell files
@@ -72,3 +73,4 @@ self.addEventListener('activate', event => {
         })
     );
 });
+
