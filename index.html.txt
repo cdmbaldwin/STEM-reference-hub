@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Reference Hub</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- PWA Icons (Example) -->
+    <link rel="icon" href="https://placehold.co/192x192/0284c7/ffffff?text=Eng" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=Eng" sizes="192x192">
+
+    <style>
+        /* Use Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Custom class for active nav link */
+        .active-nav-link {
+            background-color: #0284c7; /* tailwind-sky-600 */
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Modal styles */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            pointer-events: none;
+        }
+        .modal-content {
+            background: white;
+            padding: 1.5rem; /* p-6 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.95);
+            transition: transform 0.2s ease-in-out;
+        }
+        .modal-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-backdrop.show .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white p-6 shadow-lg z-40
+                            transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+        <h1 class="text-2xl font-bold mb-8">Engg. Hub</h1>
+        <ul id="nav-links" class="space-y-2">
+            <!-- Links will be populated by JS -->
+        </ul>
+    </nav>
+
+    <!-- Mobile Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black opacity-50 z-30 hidden md:hidden" onclick="toggleMenu()"></div>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 md:ml-64 p-6 md:p-8 overflow-y-auto transition-all duration-300">
+        <!-- Mobile Burger Button -->
+        <button id="menu-toggle" class="md:hidden fixed top-4 left-4 z-40 p-2 bg-gray-800 text-white rounded-md shadow-lg" onclick="toggleMenu()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+
+        <!-- Content Header -->
+        <h1 id="content-title" class="text-2xl md:text-3xl font-bold mb-6 text-gray-800 pt-12 md:pt-0">
+            Welcome to the Engineering Hub
+        </h1>
+
+        <!-- Content Area -->
+        <div id="content-area" class="space-y-6">
+            <p class="text-lg">Select a category from the menu to get started.</p>
+        </div>
+    </main>
+
+    <!-- Modal container (will be added to body by JS) -->
+
+    <script>
+        // --- DATA STORE ---
+        // This is where all the engineering data lives.
+        // We can easily add more categories, formulas, and calculators here.
+        const engineeringData = {
+            'electricity': {
+                title: 'Electricity & Magnetism',
+                content: [
+                    { 
+                        type: 'definition', 
+                        title: 'Electric Charge (Q)', 
+                        text: 'A fundamental property of matter that causes it to experience a force when placed in an electromagnetic field. Measured in Coulombs (C).' 
+                    },
+                    { 
+                        type: 'formula', 
+                        title: "Ohm's Law", 
+                        formula: 'V = I * R', 
+                        variables: [
+                            'V = Voltage (Volts)', 
+                            'I = Current (Amperes)', 
+                            'R = Resistance (Ohms)'
+                        ],
+                        calculator: 'ohmsLaw'
+                    },
+                    { 
+                        type: 'formula', 
+                        title: "Coulomb's Law", 
+                        formula: 'F = k * |q1 * q2| / r²', 
+                        variables: [
+                            'F = Electrostatic Force (Newtons)',
+                            'k = Coulomb\'s constant (≈ 8.99 × 10⁹ N·m²/C²)',
+                            'q1, q2 = Magnitudes of the two charges (Coulombs)',
+                            'r = Distance between charges (meters)'
+                        ],
+                        calculator: 'coulombsLaw'
+                    },
+                    { 
+                        type: 'definition', 
+                        title: 'Capacitance (C)', 
+                        text: 'The ability of a system to store an electric charge. Defined as the ratio of the magnitude of the charge on either conductor to the magnitude of the potential difference between them. Measured in Farads (F).' 
+                    },
+                    { 
+                        type: 'formula', 
+                        title: 'Capacitance', 
+                        formula: 'C = Q / V', 
+                        variables: [
+                            'C = Capacitance (Farads)',
+                            'Q = Charge (Coulombs)',
+                            'V = Voltage (Volts)'
+                        ],
+                        calculator: 'capacitance'
+                    }
+                ]
+            },
+            'physics': {
+                title: 'Classical Physics',
+                content: [
+                    { 
+                        type: 'definition', 
+                        title: 'Newton\'s First Law', 
+                        text: 'An object at rest stays at rest and an object in motion stays in motion with the same speed and in the same direction unless acted upon by an unbalanced external force.' 
+                    },
+                    { 
+                        type: 'formula', 
+                        title: "Newton's Second Law", 
+                        formula: 'F = m * a', 
+                        variables: [
+                            'F = Force (Newtons)', 
+                            'm = Mass (kilograms)', 
+                            'a = Acceleration (m/s²)'
+                        ],
+                        calculator: 'newtonsSecondLaw'
+                    }
+                ]
+            },
+            'mechanics': {
+                title: 'Mechanics',
+                content: [
+                    { type: 'definition', title: 'Work In Progress', text: 'Content for Mechanics is coming soon!' }
+                ]
+            },
+            'chemistry': {
+                title: 'Chemistry',
+                content: [
+                    { 
+                        type: 'formula', 
+                        title: "Ideal Gas Law", 
+                        formula: 'PV = nRT', 
+                        variables: [
+                            'P = Pressure (atm)', 
+                            'V = Volume (Liters)', 
+                            'n = Number of moles (mol)',
+                            'R = Ideal gas constant (0.08206 L·atm/(mol·K))',
+                            'T = Temperature (Kelvin)'
+                        ],
+                        calculator: 'idealGasLaw'
+                    }
+                ]
+            },
+            'thermodynamics': {
+                title: 'Thermodynamics',
+                content: [
+                    { type: 'definition', title: 'Work In Progress', text: 'Content for Thermodynamics is coming soon!' }
+                ]
+            },
+            'statics': {
+                title: 'Statics',
+                content: [
+                    { type: 'definition', title: 'Work In Progress', text: 'Content for Statics is coming soon!' }
+                ]
+            },
+            'fluids': {
+                title: 'Fluid Mechanics',
+                content: [
+                    { type: 'definition', title: 'Work In Progress', text: 'Content for Fluid Mechanics is coming soon!' }
+                ]
+            }
+        };
+
+        // --- CALCULATOR LOGIC ---
+        // Separate object to hold calculator definitions and logic.
+        const calculators = {
+            'ohmsLaw': {
+                title: "Ohm's Law Calculator",
+                inputs: [
+                    { id: 'v', label: 'Voltage (V)', placeholder: 'e.g., 12' },
+                    { id: 'i', label: 'Current (I)', placeholder: 'e.g., 0.5' },
+                    { id: 'r', label: 'Resistance (R)', placeholder: 'e.g., 24' }
+                ],
+                calculate: (inputs) => {
+                    const v = parseFloat(inputs.v);
+                    const i = parseFloat(inputs.i);
+                    const r = parseFloat(inputs.r);
+
+                    if (!isNaN(v) && !isNaN(i) && isNaN(r)) {
+                        return { result: `Resistance (R) = ${v / i} Ω`, value: v / i };
+                    } else if (!isNaN(v) && isNaN(i) && !isNaN(r)) {
+                        if (r === 0) return { error: "Resistance cannot be zero." };
+                        return { result: `Current (I) = ${v / r} A`, value: v / r };
+                    } else if (isNaN(v) && !isNaN(i) && !isNaN(r)) {
+                        return { result: `Voltage (V) = ${i * r} V`, value: i * r };
+                    } else {
+                        return { error: 'Please provide exactly two values to calculate the third.' };
+                    }
+                }
+            },
+            'coulombsLaw': {
+                title: "Coulomb's Law Calculator",
+                inputs: [
+                    { id: 'q1', label: 'Charge 1 (C)', placeholder: 'e.g., 1.6e-19' },
+                    { id: 'q2', label: 'Charge 2 (C)', placeholder: 'e.g., -1.6e-19' },
+                    { id: 'r', label: 'Distance (m)', placeholder: 'e.g., 1e-10' }
+                ],
+                calculate: (inputs) => {
+                    const k = 8.9875517923e9;
+                    const q1 = parseFloat(inputs.q1);
+                    const q2 = parseFloat(inputs.q2);
+                    const r = parseFloat(inputs.r);
+
+                    if (isNaN(q1) || isNaN(q2) || isNaN(r)) {
+                        return { error: 'Please provide all three values.' };
+                    }
+                    if (r === 0) {
+                        return { error: 'Distance cannot be zero.' };
+                    }
+                    const force = k * Math.abs(q1 * q2) / (r * r);
+                    return { result: `Force (F) = ${force.toExponential(4)} N`, value: force };
+                }
+            },
+            'capacitance': {
+                title: "Capacitance Calculator",
+                inputs: [
+                    { id: 'c', label: 'Capacitance (F)', placeholder: 'e.g., 1e-6' },
+                    { id: 'q', label: 'Charge (C)', placeholder: 'e.g., 5e-6' },
+                    { id: 'v', label: 'Voltage (V)', placeholder: 'e.g., 5' }
+                ],
+                calculate: (inputs) => {
+                    const c = parseFloat(inputs.c);
+                    const q = parseFloat(inputs.q);
+                    const v = parseFloat(inputs.v);
+
+                    if (!isNaN(c) && !isNaN(q) && isNaN(v)) {
+                        if (c === 0) return { error: "Capacitance cannot be zero." };
+                        return { result: `Voltage (V) = ${q / c} V`, value: q / c };
+                    } else if (!isNaN(c) && isNaN(q) && !isNaN(v)) {
+                        return { result: `Charge (Q) = ${c * v} C`, value: c * v };
+                    } else if (isNaN(c) && !isNaN(q) && !isNaN(v)) {
+                        if (v === 0) return { error: "Voltage cannot be zero." };
+                        return { result: `Capacitance (C) = ${q / v} F`, value: q / v };
+                    } else {
+                        return { error: 'Please provide exactly two values to calculate the third.' };
+                    }
+                }
+            },
+            'newtonsSecondLaw': {
+                title: "Newton's Second Law Calculator",
+                inputs: [
+                    { id: 'f', label: 'Force (F)', placeholder: 'e.g., 10' },
+                    { id: 'm', label: 'Mass (m)', placeholder: 'e.g., 2' },
+                    { id: 'a', label: 'Acceleration (a)', placeholder: 'e.g., 5' }
+                ],
+                calculate: (inputs) => {
+                    const f = parseFloat(inputs.f);
+                    const m = parseFloat(inputs.m);
+                    const a = parseFloat(inputs.a);
+
+                    if (!isNaN(f) && !isNaN(m) && isNaN(a)) {
+                        if (m === 0) return { error: "Mass cannot be zero." };
+                        return { result: `Acceleration (a) = ${f / m} m/s²`, value: f / m };
+                    } else if (!isNaN(f) && isNaN(m) && !isNaN(a)) {
+                        if (a === 0) return { error: "Acceleration cannot be zero." };
+                        return { result: `Mass (m) = ${f / a} kg`, value: f / a };
+                    } else if (isNaN(f) && !isNaN(m) && !isNaN(a)) {
+                        return { result: `Force (F) = ${m * a} N`, value: m * a };
+                    } else {
+                        return { error: 'Please provide exactly two values to calculate the third.' };
+                    }
+                }
+            },
+            'idealGasLaw': {
+                title: "Ideal Gas Law Calculator",
+                inputs: [
+                    { id: 'p', label: 'Pressure (atm)', placeholder: 'e.g., 1' },
+                    { id: 'v', label: 'Volume (L)', placeholder: 'e.g., 22.4' },
+                    { id: 'n', label: 'Moles (mol)', placeholder: 'e.g., 1' },
+                    { id: 't', label: 'Temperature (K)', placeholder: 'e.g., 273.15' }
+                ],
+                calculate: (inputs) => {
+                    const R = 0.08206;
+                    const p = parseFloat(inputs.p);
+                    const v = parseFloat(inputs.v);
+                    const n = parseFloat(inputs.n);
+                    const t = parseFloat(inputs.t);
+                    
+                    if (isNaN(p)) {
+                        if (v === 0) return { error: "Volume cannot be zero." };
+                        const val = (n * R * t) / v;
+                        return { result: `Pressure (P) = ${val.toFixed(4)} atm`, value: val };
+                    } else if (isNaN(v)) {
+                        if (p === 0) return { error: "Pressure cannot be zero." };
+                        const val = (n * R * t) / p;
+                        return { result: `Volume (V) = ${val.toFixed(4)} L`, value: val };
+                    } else if (isNaN(n)) {
+                        if (R === 0 || t === 0) return { error: "R or T cannot be zero." };
+                        const val = (p * v) / (R * t);
+                        return { result: `Moles (n) = ${val.toFixed(4)} mol`, value: val };
+                    } else if (isNaN(t)) {
+                        if (R === 0 || n === 0) return { error: "R or n cannot be zero." };
+                        const val = (p * v) / (n * R);
+                        return { result: `Temperature (T) = ${val.toFixed(4)} K`, value: val };
+                    } else {
+                         return { error: 'Please provide exactly three values to calculate the fourth.' };
+                    }
+                }
+            }
+        };
+
+        // --- DOM Elements ---
+        const navLinksContainer = document.getElementById('nav-links');
+        const contentTitle = document.getElementById('content-title');
+        const contentArea = document.getElementById('content-area');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const mainContent = document.getElementById('main-content');
+
+        // --- APP INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        function initApp() {
+            populateNavLinks();
+            // Load the first category by default, or a welcome message
+            if (Object.keys(engineeringData).length > 0) {
+                 // Let's load 'electricity' by default
+                 loadCategory('electricity');
+            }
+            
+            // PWA Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            }
+        }
+
+        // --- NAVIGATION ---
+        function populateNavLinks() {
+            navLinksContainer.innerHTML = ''; // Clear existing links
+            Object.keys(engineeringData).forEach(key => {
+                const category = engineeringData[key];
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <a href="#" 
+                       class="nav-link block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700" 
+                       data-category="${key}">
+                        ${category.title}
+                    </a>
+                `;
+                navLinksContainer.appendChild(li);
+            });
+
+            // Add click event listener to the container
+            navLinksContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A') {
+                    e.preventDefault();
+                    const categoryId = e.target.dataset.category;
+                    loadCategory(categoryId);
+                    if (window.innerWidth < 768) { // md breakpoint
+                        toggleMenu();
+                    }
+                }
+            });
+        }
+
+        function loadCategory(categoryId) {
+            const category = engineeringData[categoryId];
+            if (!category) return;
+
+            // Update title
+            contentTitle.textContent = category.title;
+
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active-nav-link');
+                if (link.dataset.category === categoryId) {
+                    link.classList.add('active-nav-link');
+                }
+            });
+
+            // Populate content area
+            contentArea.innerHTML = ''; // Clear previous content
+            category.content.forEach(item => {
+                let cardHtml = '';
+                if (item.type === 'definition') {
+                    cardHtml = createDefinitionCard(item);
+                } else if (item.type === 'formula') {
+                    cardHtml = createFormulaCard(item);
+                }
+                contentArea.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        function toggleMenu() {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // --- CONTENT CARD BUILDERS ---
+        function createDefinitionCard(item) {
+            return `
+                <div class="bg-white p-6 rounded-lg shadow-md transition-shadow duration-300 hover:shadow-lg">
+                    <h2 class="text-xl font-semibold mb-3 text-sky-700">${item.title}</h2>
+                    <p class="text-gray-700 leading-relaxed">${item.text}</p>
+                </div>
+            `;
+        }
+
+        function createFormulaCard(item) {
+            const variablesHtml = item.variables.map(v => `<li class="text-gray-600">${v}</li>`).join('');
+            const calculatorButton = item.calculator
+                ? `<button class="mt-4 bg-sky-600 text-white font-medium py-2 px-5 rounded-lg shadow
+                                hover:bg-sky-700 transition duration-200 focus:outline-none focus:ring-2
+                                focus:ring-sky-500 focus:ring-opacity-50"
+                          onclick="openCalculator('${item.calculator}')">
+                    Open Calculator
+                 </button>`
+                : '';
+            
+            return `
+                <div class="bg-white p-6 rounded-lg shadow-md transition-shadow duration-300 hover:shadow-lg">
+                    <h2 class="text-xl font-semibold mb-3 text-gray-800">${item.title}</h2>
+                    <div class="bg-gray-100 p-4 rounded-md mb-4">
+                        <p class="text-lg font-mono text-center text-blue-800">${item.formula}</p>
+                    </div>
+                    <h3 class="font-semibold mb-2">Variables:</h3>
+                    <ul class="list-disc list-inside space-y-1">${variablesHtml}</ul>
+                    ${calculatorButton}
+                </div>
+            `;
+        }
+        
+        // --- MODAL & CALCULATOR ---
+        function openCalculator(calcId) {
+            const calculator = calculators[calcId];
+            if (!calculator) return;
+
+            const inputsHtml = calculator.inputs.map(input => `
+                <div class="mb-3">
+                    <label for="${input.id}" class="block text-sm font-medium text-gray-700 mb-1">${input.label}</label>
+                    <input type="number" id="${input.id}" name="${input.id}" 
+                           placeholder="${input.placeholder}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
+                                  focus:outline-none focus:ring-sky-500 focus:border-sky-500">
+                </div>
+            `).join('');
+
+            const modalHtml = `
+                <div id="modal-backdrop" class="modal-backdrop" onclick="closeModal()">
+                    <div class="modal-content" onclick="event.stopPropagation()">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-semibold">${calculator.title}</h2>
+                            <button class="text-gray-400 hover:text-gray-600" onclick="closeModal()">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <p class="text-sm text-gray-500 mb-4">Leave one field blank to calculate it.</p>
+                        
+                        <div id="calc-form">
+                            ${inputsHtml}
+                        </div>
+                        
+                        <button class="w-full mt-4 bg-blue-600 text-white font-medium py-2.5 px-5 rounded-lg shadow
+                                       hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-2
+                                       focus:ring-blue-500 focus:ring-opacity-50"
+                                onclick="performCalculation('${calcId}')">
+                            Calculate
+                        </button>
+                        
+                        <div id="calc-result" class="mt-5 p-4 bg-gray-100 rounded-md text-center h-14
+                                                    flex items-center justify-center font-medium">
+                            <span class="text-gray-500">Result will appear here</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Trigger the show animation
+            requestAnimationFrame(() => {
+                document.getElementById('modal-backdrop').classList.add('show');
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal-backdrop');
+            if (modal) {
+                modal.classList.remove('show');
+                modal.addEventListener('transitionend', () => {
+                    modal.remove();
+                }, { once: true });
+            }
+        }
+        
+        function performCalculation(calcId) {
+            const calculator = calculators[calcId];
+            const inputs = {};
+            
+            calculator.inputs.forEach(input => {
+                inputs[input.id] = document.getElementById(input.id).value;
+            });
+            
+            const result = calculator.calculate(inputs);
+            const resultBox = document.getElementById('calc-result');
+            
+            if (result.error) {
+                resultBox.innerHTML = `<span class="text-red-600">${result.error}</span>`;
+            } else {
+                resultBox.innerHTML = `<span class="text-green-700 text-lg">${result.result}</span>`;
+            }
+        }
+
+    </script>
+
+</body>
+</html>
+
